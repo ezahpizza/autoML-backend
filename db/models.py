@@ -2,29 +2,35 @@
 Pydantic models for MongoDB document schemas.
 """
 
+from bson import ObjectId
 from datetime import datetime, UTC
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
-from bson import ObjectId
-
+from pydantic import BaseModel, Field, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
 
 class PyObjectId(ObjectId):
-    """Custom ObjectId type for Pydantic."""
-    
+    """Custom ObjectId type for Pydantic v2."""
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
-    
+
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v: Any) -> ObjectId:
         if not ObjectId.is_valid(v):
             raise ValueError("Invalid ObjectId")
         return ObjectId(v)
-    
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
 
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls,
+        core_schema: Any,
+        handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        # Generate base schema and update type
+        schema = handler(core_schema)
+        schema.update(type="string", examples=["507f1f77bcf86cd799439011"])
+        return schema
 
 class User(BaseModel):
     """User document model."""

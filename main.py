@@ -1,0 +1,209 @@
+"""
+FastAPI entrypoint for AutoML platform.
+"""
+
+import logging
+from contextlib import asynccontextmanager
+import uvicorn
+
+from typing import Dict, Any
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
+
+from config import settings
+from db.mongodb import mongodb
+from routes import train, eda, plots, models, cleanup
+from services.cleanup_service import CleanupService
+from schemas.response_schemas import HealthResponse, ErrorResponse, UserResponse
+from schemas.request_schemas import UserInitRequest
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup and shutdown events."""
+    # Startup
+    logger.info("Starting AutoML Platform API...")
+    
+    try:
+        # Connect to MongoDB
+        await mongodb.connect()
+        logger.info("MongoDB connection established")
+        
+        # Run startup cleanup (files older than 24 hours)
+        cleanup_service = CleanupService()
+        cleanup_result = await cleanup_service.cleanup_old_files()
+        logger.info(f"Startup cleanup completed: {cleanup_result}")
+        
+        # Ensure storage directories exist
+        logger.info("Storage directories initialized")
+        
+        logger.info("AutoML Platform API started successfully")
+        
+    except Exception as e:
+        logger.error(f"Failed to start application: {e}")
+        raise
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down AutoML Platform API...")
+    
+    try:
+        # Disconnect from MongoDB
+        await mongodb.disconnect()
+        logger.info("MongoDB connection closed")
+        
+        logger.info("AutoML Platform API shutdown complete")
+        
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+
+
+# Create FastAPI application
+app = FastAPI(
+    title=settings.API_TITLE,
+    version=settings.API_VERSION,
+    description=settings.API_DESCRIPTION,
+    lifespan=lifespan
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  #settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files for serving plots and EDA reports
+app.mount("/static/plots", StaticFiles(directory=str(settings.plots_dir)), name="plots")
+app.mount("/static/eda", StaticFiles(directory=str(settings.eda_reports_dir)), name="eda_reports")
+
+# Include route modules
+app.include_router(train.router, prefix="/model", tags=["Model Training"])
+app.include_router(eda.router, prefix="/eda", tags=["EDA Reports"])
+app.include_router(plots.router, prefix="/plots", tags=["Plots"])
+app.include_router(models.router, prefix="/model", tags=["Model Management"])
+app.include_router(cleanup.router, prefix="/cleanup", tags=["Cleanup"])
+
+
+@app.get("/", response_model=Dict[str, str])
+async def root():
+    """Root endpoint with API information."""
+    return {
+        "message": "AutoML Platform API",
+        "version": settings.API_VERSION,
+        "status": "running"
+    }
+
+
+@app.get("/health", response_model=HealthResponse)
+async def health_check():
+    """Health check endpoint."""
+    try:
+        # Test database connection
+        database_connected = False
+        try:
+            await mongodb.client.admin.command('ping')
+            database_connected = True
+        except Exception as e:
+            logger.warning(f"Database health check failed: {e}")
+        
+        # Test storage accessibility
+        storage_accessible = all([
+            settings.models_dir.exists(),
+            settings.plots_dir.exists(),
+            settings.eda_reports_dir.exists()
+        ])
+                
+        return HealthResponse(
+            status="healthy" if database_connected and storage_accessible else "degraded",
+            database_connected=database_connected,
+            storage_accessible=storage_accessible,
+            version=settings.API_VERSION
+        )
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=500, detail="Health check failed")
+
+
+@app.post("/user/init")
+async def initialize_user(request: Dict[str, Any]):
+    """Initialize a new user in the system."""
+    try:
+        
+        
+        # Validate request
+        user_request = UserInitRequest(**request)
+        
+        # Check if user already exists
+        existing_user = await mongodb.get_user(user_request.user_id)
+        if existing_user:
+            return UserResponse(
+                success=True,
+                message="User already exists",
+                user_id=existing_user["user_id"],
+                email=existing_user["email"],
+                name=existing_user.get("name"),
+                created_at=existing_user["created_at"]
+            )
+        
+        # Create new user
+        user_data = {
+            "user_id": user_request.user_id,
+            "email": user_request.email,
+            "name": user_request.name
+        }
+        
+        created_user = await mongodb.create_user(user_data)
+        
+        return UserResponse(
+            success=True,
+            message="User initialized successfully",
+            user_id=created_user["user_id"],
+            email=created_user["email"],
+            name=created_user.get("name"),
+            created_at=created_user["created_at"]
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize user: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to initialize user: {str(e)}")
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc: HTTPException):
+    """Custom HTTP exception handler."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ErrorResponse(
+            error="HTTPException",
+            message=exc.detail,
+            details={"status_code": exc.status_code}
+        ).dict()
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request, exc: Exception):
+    """General exception handler."""
+    logger.error(f"Unhandled exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content=ErrorResponse(
+            error="InternalServerError",
+            message="An unexpected error occurred",
+            details={"type": type(exc).__name__}
+        ).dict()
+    )

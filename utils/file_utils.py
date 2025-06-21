@@ -12,7 +12,7 @@ import logging
 import pandas as pd
 from fastapi import UploadFile, HTTPException
 
-from app.config import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 
