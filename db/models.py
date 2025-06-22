@@ -3,7 +3,7 @@ Pydantic models for MongoDB document schemas.
 """
 
 from bson import ObjectId
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -39,8 +39,8 @@ class User(BaseModel):
     user_id: str = Field(..., description="Unique user identifier from frontend auth")
     email: str = Field(..., description="User email address")
     name: Optional[str] = Field(None, description="User display name")
-    created_at: datetime = Field(default_factory=datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     class Config:
         allow_population_by_field_name = True
@@ -59,7 +59,7 @@ class EDAJob(BaseModel):
     dataset_columns: int = Field(..., description="Number of columns in dataset")
     file_size: int = Field(..., description="File size in bytes")
     status: str = Field(default="completed", description="Job status")
-    created_at: datetime = Field(default_factory=datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     class Config:
         allow_population_by_field_name = True
@@ -84,7 +84,7 @@ class ModelJob(BaseModel):
     dataset_columns: int = Field(..., description="Number of columns in dataset")
     training_time: Optional[float] = Field(None, description="Training time in seconds")
     status: str = Field(default="completed", description="Job status")
-    created_at: datetime = Field(default_factory=datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     class Config:
         allow_population_by_field_name = True
@@ -101,7 +101,7 @@ class Prediction(BaseModel):
     input_data: Dict[str, Any] = Field(..., description="Input data for prediction")
     predictions: List[Any] = Field(..., description="Model predictions")
     prediction_probabilities: Optional[List[List[float]]] = Field(None, description="Prediction probabilities")
-    created_at: datetime = Field(default_factory=datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     class Config:
         allow_population_by_field_name = True
@@ -117,7 +117,7 @@ class CleanupLog(BaseModel):
     user_id: Optional[str] = Field(None, description="User ID if user-specific cleanup")
     files_deleted: List[str] = Field(default_factory=list, description="List of deleted files")
     records_deleted: Dict[str, int] = Field(default_factory=dict, description="Count of deleted records per collection")
-    created_at: datetime = Field(default_factory=datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     class Config:
         allow_population_by_field_name = True

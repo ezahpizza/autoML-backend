@@ -138,3 +138,9 @@ class CleanupUserRequest(BaseModel):
         if not v:
             raise ValueError('Confirmation required for cleanup operation')
         return v
+    
+class CompareModelsRequest(BaseModel):
+    """Request schema for user model comparison operations."""
+
+    user_id: str
+    model_filenames: Optional[List[str]] = None

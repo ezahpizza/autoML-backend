@@ -2,7 +2,7 @@
 Pydantic response schemas for API endpoints.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
@@ -12,7 +12,7 @@ class BaseResponse(BaseModel):
     
     success: bool = Field(..., description="Operation success status")
     message: str = Field(..., description="Response message")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Response timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Response timestamp")
 
 
 class UserResponse(BaseResponse):
@@ -133,7 +133,7 @@ class HealthResponse(BaseModel):
     """Response schema for health check."""
     
     status: str = Field(..., description="Service status")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     database_connected: bool = Field(..., description="Database connection status")
     storage_accessible: bool = Field(..., description="Storage accessibility status")
     version: str = Field(..., description="API version")
@@ -146,4 +146,4 @@ class ErrorResponse(BaseModel):
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Error timestamp")

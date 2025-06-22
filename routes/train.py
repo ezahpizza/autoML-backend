@@ -5,6 +5,7 @@ Model training API routes.
 import logging
 from typing import Dict, Any
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi.encoders import jsonable_encoder
 
 from services.train_service import TrainService
 from schemas.request_schemas import ModelTrainRequest, PredictionRequest
@@ -54,13 +55,15 @@ async def train_model(
         
         # Initialize training service
         train_service = TrainService()
+        await train_service.async_init()
         
         # Start training process
         result = await train_service.train_model(file, train_request)
         
         logger.info(f"Model training completed for user {user_id}")
         
-        return ModelTrainResponse(
+        # Use jsonable_encoder to ensure datetime serialization
+        return jsonable_encoder(ModelTrainResponse(
             success=True,
             message="Model training completed successfully",
             filename=result["filename"],
@@ -73,7 +76,7 @@ async def train_model(
             metrics=result["metrics"],
             plot_urls=result["plot_urls"],
             training_time=result["training_time"]
-        )
+        ))
         
     except HTTPException:
         raise
@@ -92,14 +95,15 @@ async def get_model_history(user_id: str, limit: int = 50):
     """
     try:
         train_service = TrainService()
+        await train_service.async_init()
         history = await train_service.get_training_history(user_id, limit)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Retrieved {len(history)} training records",
             "history": history,
             "total_count": len(history)
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to get training history for user {user_id}: {e}")
@@ -122,18 +126,19 @@ async def make_prediction(request: Dict[str, Any]):
         
         # Initialize training service
         train_service = TrainService()
+        await train_service.async_init()
         
         # Make prediction
         result = await train_service.predict(prediction_request)
         
-        return PredictionResponse(
+        return jsonable_encoder(PredictionResponse(
             success=True,
             message="Prediction completed successfully",
             predictions=result["predictions"],
             prediction_probabilities=result.get("prediction_probabilities"),
             model_used=result["model_filename"],
             input_features=result["input_data"]
-        )
+        ))
         
     except HTTPException:
         raise
@@ -161,15 +166,16 @@ async def validate_dataset(
         
         # Initialize training service
         train_service = TrainService()
+        await train_service.async_init()
         
         # Validate dataset
         validation_result = await train_service.validate_dataset(file, target_column)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": "Dataset validation completed",
             "validation_result": validation_result
-        }
+        })
         
     except HTTPException:
         raise

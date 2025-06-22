@@ -1,14 +1,22 @@
-envirax
+# Virtual environments
+.venv/
+envirax/
+
+# Python cache and test artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment & secrets
 .env
+
+# Logs
+*.log
+
+# Project-specific files to ignore
+storage/
 future-updates.txt
 
-__pycache__/
-.pytest_cache
-db/__pycache__/
-routes/__pycache__/
-utils/__pycache__/
-schemas/__pycache__/
-services/__pycache__/
-logs.log
-
-storage
+# VSCode or editor-specific (optional)
+.vscode/
+.idea/

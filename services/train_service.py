@@ -26,11 +26,13 @@ logger = logging.getLogger(__name__)
 
 class TrainService:
     """Service for handling model training operations with PyCaret."""
-    
-    async def __init__(self):
+    def __init__(self):
         self.db = MongoDB()
-        await self.db.connect()
         self.plot_service = PlotService()
+    
+    async def async_init(self):
+        await self.db.connect()
+        await self.plot_service.async_init()
     
     async def train_model(self, file: UploadFile, request: ModelTrainRequest) -> Dict[str, Any]:
         """Train ML model using PyCaret and save results."""
@@ -64,7 +66,6 @@ class TrainService:
                     target=request.target_column,
                     session_id=123,
                     train_size=0.8,
-                    silent=True,
                     verbose=False,
                     use_gpu=False
                 )
@@ -75,7 +76,6 @@ class TrainService:
                     target=request.target_column,
                     session_id=123,
                     train_size=0.8,
-                    silent=True,
                     verbose=False,
                     use_gpu=False
                 )
@@ -103,7 +103,8 @@ class TrainService:
                 request.dataset_name
             )
             model_filepath = settings.models_dir / model_filename
-            
+            # Ensure the models directory exists
+            model_filepath.parent.mkdir(parents=True, exist_ok=True)
             # Save model
             with open(model_filepath, 'wb') as f:
                 pickle.dump(final_model, f)
@@ -137,8 +138,8 @@ class TrainService:
                 dataset_columns=len(df_clean.columns),
                 training_time=training_time
             )
-            
-            await self.db.model_jobs.insert_one(model_job.model_dump(by_alias=True))
+            model_jobs_collection = self.db.get_collection("model_jobs")
+            await model_jobs_collection.insert_one(model_job.model_dump(by_alias=True))
             
             # Clean up temporary file
             if temp_filepath.exists():
@@ -202,8 +203,8 @@ class TrainService:
                 predictions=predictions,
                 prediction_probabilities=prediction_probabilities
             )
-            
-            await self.db.predictions.insert_one(prediction_record.model_dump(by_alias=True))
+            predictions_collection = self.db.get_collection("predictions")
+            await predictions_collection.insert_one(prediction_record.model_dump(by_alias=True))
             
             return {
                 "predictions": predictions,
@@ -219,7 +220,8 @@ class TrainService:
     async def get_training_history(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Get training history for a user."""
         try:
-            cursor = self.db.model_jobs.find(
+            model_jobs_collection = self.db.get_collection("model_jobs")
+            cursor = model_jobs_collection.find(
                 {"user_id": user_id}
             ).sort("created_at", -1).limit(limit)
             
@@ -258,7 +260,8 @@ class TrainService:
             # Read dataset
             df = await FileManager.read_csv_file(temp_filepath)
             
-            # Validation results
+            # Convert dtypes to string for JSON serialization
+            data_types_str = {col: str(dtype) for col, dtype in df.dtypes.to_dict().items()}
             validation_result = {
                 "valid": True,
                 "warnings": [],
@@ -268,7 +271,7 @@ class TrainService:
                     "columns": len(df.columns),
                     "target_column": target_column,
                     "column_names": df.columns.tolist(),
-                    "data_types": df.dtypes.to_dict(),
+                    "data_types": data_types_str,
                     "missing_values": df.isnull().sum().to_dict(),
                     "target_column_type": str(df[target_column].dtype) if target_column in df.columns else None
                 }

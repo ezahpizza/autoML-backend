@@ -4,7 +4,7 @@ Naming utilities for generating unique filenames and identifiers.
 
 import uuid
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from pathlib import Path
 
@@ -40,7 +40,7 @@ class NamingUtils:
     @staticmethod
     def generate_model_filename(user_id: str, dataset_name: str) -> str:
         """Generate unique filename for trained models."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         unique_id = str(uuid.uuid4())[:8]
         sanitized_dataset = NamingUtils.sanitize_filename(dataset_name)
         
@@ -49,7 +49,7 @@ class NamingUtils:
     @staticmethod
     def generate_plot_filename(user_id: str, model_name: str, plot_type: str) -> str:
         """Generate unique filename for evaluation plots."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         unique_id = str(uuid.uuid4())[:8]
         sanitized_model = NamingUtils.sanitize_filename(model_name)
         sanitized_plot_type = NamingUtils.sanitize_filename(plot_type)
@@ -59,7 +59,7 @@ class NamingUtils:
     @staticmethod
     def generate_eda_filename(user_id: str, dataset_name: str) -> str:
         """Generate unique filename for EDA reports."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         unique_id = str(uuid.uuid4())[:8]
         sanitized_dataset = NamingUtils.sanitize_filename(dataset_name)
         
@@ -68,7 +68,7 @@ class NamingUtils:
     @staticmethod
     def generate_temp_filename(user_id: str, original_filename: str) -> str:
         """Generate temporary filename for uploaded files."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         unique_id = str(uuid.uuid4())[:8]
         extension = Path(original_filename).suffix
         sanitized_name = NamingUtils.sanitize_filename(original_filename)

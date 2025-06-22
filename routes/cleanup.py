@@ -4,6 +4,7 @@ Cleanup API routes for file and database maintenance.
 
 import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi.encoders import jsonable_encoder
 
 from services.cleanup_service import CleanupService
 from schemas.request_schemas import CleanupUserRequest
@@ -47,14 +48,14 @@ async def cleanup_user_files(
         
         logger.info(f"User cleanup completed for user {user_id}")
         
-        return CleanupResponse(
+        return jsonable_encoder(CleanupResponse(
             success=True,
             message=f"Successfully cleaned up data for user {user_id}",
             files_deleted=result["files_deleted"],
             records_deleted=result["records_deleted"],
             total_files_deleted=result["total_files_deleted"],
             total_records_deleted=result["total_records_deleted"]
-        )
+        ))
         
     except HTTPException:
         raise
@@ -85,14 +86,14 @@ async def cleanup_old_files(
         action = "Would delete" if dry_run else "Deleted"
         logger.info(f"System cleanup: {action} {result['total_files_deleted']} files")
         
-        return CleanupResponse(
+        return jsonable_encoder(CleanupResponse(
             success=True,
             message=f"{action} {result['total_files_deleted']} old files and {result['total_records_deleted']} records",
             files_deleted=result["files_deleted"],
             records_deleted=result["records_deleted"],
             total_files_deleted=result["total_files_deleted"],
             total_records_deleted=result["total_records_deleted"]
-        )
+        ))
         
     except Exception as e:
         logger.error(f"System cleanup failed: {e}")
@@ -113,12 +114,12 @@ async def cleanup_orphaned_records():
         
         logger.info(f"Orphaned cleanup: removed {result['total_records_deleted']} records")
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Removed {result['total_records_deleted']} orphaned records",
             "records_deleted": result["records_deleted"],
             "total_records_deleted": result["total_records_deleted"]
-        }
+        })
         
     except Exception as e:
         logger.error(f"Orphaned cleanup failed: {e}")
@@ -137,11 +138,11 @@ async def get_cleanup_status():
         # Get cleanup statistics
         stats = await cleanup_service.get_cleanup_statistics()
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": "Cleanup status retrieved",
             "statistics": stats
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to get cleanup status: {e}")
@@ -162,12 +163,12 @@ async def get_cleanup_logs(limit: int = 50):
         # Get cleanup logs
         logs = await cleanup_service.get_cleanup_logs(limit)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Retrieved {len(logs)} cleanup log entries",
             "logs": logs,
             "total_count": len(logs)
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to get cleanup logs: {e}")
@@ -201,11 +202,11 @@ async def schedule_cleanup(
         
         logger.info(f"Cleanup scheduled: {message}")
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": message,
             "scheduled": True
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to schedule cleanup: {e}")

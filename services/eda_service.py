@@ -25,11 +25,15 @@ class EDAService:
     def __init__(self):
         """Initialize EDA service."""
         self.db = MongoDB()
-        self.eda_collection = self.db.get_collection("eda_jobs")
+        self.eda_collection = None  # Will be set after DB connect
         self.reports_dir = settings.eda_reports_dir
         
         # Ensure EDA reports directory exists
         self.reports_dir.mkdir(parents=True, exist_ok=True)
+    
+    async def async_init(self):
+        await self.db.connect()
+        self.eda_collection = self.db.get_collection("eda_jobs")
     
     async def generate_report(self, file: UploadFile, request: EDAGenerateRequest) -> Dict[str, Any]:
         """Generate EDA report from uploaded CSV file."""
@@ -198,147 +202,4 @@ class EDAService:
             logger.error(f"Failed to delete EDA report {filename}: {e}")
             return False
     
-    async def delete_user_reports(self, user_id: str) -> Dict[str, Any]:
-        """Delete all EDA reports for a specific user."""
-        try:
-            # Find all user reports
-            cursor = self.eda_collection.find({"user_id": user_id})
-            
-            files_deleted = []
-            file_count = 0
-            
-            async for doc in cursor:
-                filename = doc["filename"]
-                report_path = self.reports_dir / filename
-                
-                if FileManager.delete_file(report_path):
-                    files_deleted.append(filename)
-                    file_count += 1
-            
-            # Delete database records
-            result = await self.eda_collection.delete_many({"user_id": user_id})
-            records_deleted = result.deleted_count
-            
-            logger.info(f"Deleted {file_count} EDA files and {records_deleted} records for user {user_id}")
-            
-            return {
-                "files_deleted": files_deleted,
-                "total_files_deleted": file_count,
-                "total_records_deleted": records_deleted
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to delete user EDA reports for {user_id}: {e}")
-            return {
-                "files_deleted": [],
-                "total_files_deleted": 0,
-                "total_records_deleted": 0
-            }
     
-    async def cleanup_old_reports(self, hours: int = 24, dry_run: bool = False) -> Dict[str, Any]:
-        """Clean up EDA reports older than specified hours."""
-        try:
-            # Find old files
-            old_files = FileManager.find_old_files(self.reports_dir, hours)
-            
-            files_deleted = []
-            if not dry_run:
-                # Delete old files
-                for file_path in old_files:
-                    if FileManager.delete_file(file_path):
-                        files_deleted.append(file_path.name)
-                        
-                        # Delete corresponding database record
-                        await self.eda_collection.delete_one({"filename": file_path.name})
-            else:
-                files_deleted = [f.name for f in old_files]
-            
-            logger.info(f"EDA cleanup: {'Would delete' if dry_run else 'Deleted'} {len(files_deleted)} files")
-            
-            return {
-                "files_deleted": files_deleted,
-                "total_files_deleted": len(files_deleted),
-                "total_records_deleted": len(files_deleted) if not dry_run else 0
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to cleanup old EDA reports: {e}")
-            return {
-                "files_deleted": [],
-                "total_files_deleted": 0,
-                "total_records_deleted": 0
-            }
-    
-    async def cleanup_orphaned_records(self) -> Dict[str, int]:
-        """Remove EDA database records that don't have corresponding files."""
-        try:
-            # Get all EDA records
-            cursor = self.eda_collection.find({})
-            
-            orphaned_records = []
-            async for doc in cursor:
-                filename = doc["filename"]
-                report_path = self.reports_dir / filename
-                
-                # If file doesn't exist, mark record as orphaned
-                if not report_path.exists():
-                    orphaned_records.append(doc["_id"])
-            
-            # Delete orphaned records
-            if orphaned_records:
-                result = await self.eda_collection.delete_many(
-                    {"_id": {"$in": orphaned_records}}
-                )
-                deleted_count = result.deleted_count
-            else:
-                deleted_count = 0
-            
-            logger.info(f"Cleaned up {deleted_count} orphaned EDA records")
-            
-            return {"eda_records": deleted_count}
-            
-        except Exception as e:
-            logger.error(f"Failed to cleanup orphaned EDA records: {e}")
-            return {"eda_records": 0}
-    
-    async def get_report_statistics(self) -> Dict[str, Any]:
-        """Get EDA report statistics."""
-        try:
-            # Count total reports
-            total_reports = await self.eda_collection.count_documents({})
-            
-            # Count reports by status
-            pipeline = [
-                {"$group": {"_id": "$status", "count": {"$sum": 1}}}
-            ]
-            status_counts = {}
-            async for doc in self.eda_collection.aggregate(pipeline):
-                status_counts[doc["_id"]] = doc["count"]
-            
-            # Get recent activity (last 7 days)
-            seven_days_ago = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-            seven_days_ago = seven_days_ago.replace(day=seven_days_ago.day - 7)
-            
-            recent_reports = await self.eda_collection.count_documents({
-                "created_at": {"$gte": seven_days_ago}
-            })
-            
-            # Calculate total storage used
-            total_storage = FileManager.get_directory_size(self.reports_dir)
-            
-            return {
-                "total_reports": total_reports,
-                "status_counts": status_counts,
-                "recent_reports": recent_reports,
-                "total_storage_bytes": total_storage,
-                "storage_directory": str(self.reports_dir)
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to get EDA statistics: {e}")
-            return {
-                "total_reports": 0,
-                "status_counts": {},
-                "recent_reports": 0,
-                "total_storage_bytes": 0
-            }

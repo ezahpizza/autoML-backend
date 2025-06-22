@@ -11,6 +11,7 @@ from config import settings
 from db.mongodb import MongoDB
 from utils.naming import NamingUtils
 from utils.file_utils import FileManager
+from schemas.request_schemas import CompareModelsRequest
 
 logger = logging.getLogger(__name__)
 
@@ -18,16 +19,18 @@ logger = logging.getLogger(__name__)
 class ModelService:
     """Service for managing trained models and their metadata."""
     
-    async def __init__(self):
+    def __init__(self):
         self.db = MongoDB()
+    
+    async def async_init(self):
         await self.db.connect()
 
-    
     async def list_user_models(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
         """List all models for a specific user."""
         try:            
             # Query models collection
-            cursor = self.db.model_jobs.find(
+            model_jobs_collection = self.db.get_collection("model_jobs")
+            cursor = model_jobs_collection.find(
                 {"user_id": user_id},
                 sort=[("created_at", -1)],
                 limit=limit
@@ -64,9 +67,9 @@ class ModelService:
     async def delete_model(self, filename: str) -> bool:
         """Delete a model file and its metadata."""
         try:
-
             # Delete from database
-            result = await self.db.model_jobs.delete_one({"filename": filename})
+            model_jobs_collection = self.db.get_collection("model_jobs")
+            result = await model_jobs_collection.delete_one({"filename": filename})
             
             # Delete model file
             model_path = settings.models_dir / filename
@@ -90,7 +93,8 @@ class ModelService:
         """Delete all plots associated with a model."""
         try:            
             # Get model document to find plot filenames
-            model_doc = await self.db.model_jobs.find_one({"filename": model_filename})
+            model_jobs_collection = self.db.get_collection("model_jobs")
+            model_doc = await model_jobs_collection.find_one({"filename": model_filename})
             
             if not model_doc or not model_doc.get("plot_filenames"):
                 return 0
@@ -111,8 +115,8 @@ class ModelService:
     async def get_model_metrics(self, filename: str) -> Optional[Dict[str, Any]]:
         """Get detailed metrics for a specific model."""
         try:
-            
-            model_doc = await self.db.model_jobs.find_one({"filename": filename})
+            model_jobs_collection = self.db.get_collection("model_jobs")
+            model_doc = await model_jobs_collection.find_one({"filename": filename})
             
             if not model_doc:
                 logger.warning(f"Model metadata not found: {filename}")
@@ -143,8 +147,8 @@ class ModelService:
     async def get_model_plots(self, filename: str) -> Optional[List[Dict[str, str]]]:
         """Get all plot URLs associated with a specific model."""
         try:
-            
-            model_doc = await self.db.model_jobs.find_one({"filename": filename})
+            model_jobs_collection = self.db.get_collection("model_jobs")
+            model_doc = await model_jobs_collection.find_one({"filename": filename})
             
             if not model_doc:
                 logger.warning(f"Model metadata not found: {filename}")
@@ -173,17 +177,20 @@ class ModelService:
             logger.error(f"Failed to get model plots for {filename}: {e}")
             raise
     
-    async def compare_models(self, user_id: str, model_filenames: Optional[List[str]] = None) -> Dict[str, Any]:
+    async def compare_models(self, request: CompareModelsRequest) -> Dict[str, Any]:
         """Compare multiple models for a user."""
         try:
-            
+            user_id = request.user_id
+            model_filenames = request.model_filenames
+
             # Build query
             query = {"user_id": user_id}
             if model_filenames:
                 query["filename"] = {"$in": model_filenames}
             
             # Get models to compare
-            cursor = self.db.model_jobs.find(query, sort=[("best_model_score", -1)])
+            model_jobs_collection = self.db.get_collection("model_jobs")
+            cursor = model_jobs_collection.find(query, sort=[("best_model_score", -1)])
             models = []
             async for model_doc in cursor:
                 models.append(model_doc)
@@ -264,4 +271,4 @@ class ModelService:
         except Exception as e:
             logger.error(f"Failed to validate model {filename}: {e}")
             return False
-    
+

@@ -5,9 +5,11 @@ Model management API routes.
 import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.encoders import jsonable_encoder
 from typing import List
 
 from services.model_service import ModelService
+from schemas.request_schemas import CompareModelsRequest
 from schemas.response_schemas import ModelListResponse, ModelListItem, BaseResponse
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,8 @@ async def list_user_models(user_id: str, limit: int = 50):
     """
     try:
         model_service = ModelService()
+        await model_service.async_init()
+
         models = await model_service.list_user_models(user_id, limit)
         
         model_items = []
@@ -58,6 +62,8 @@ async def download_model(filename: str):
     """
     try:
         model_service = ModelService()
+        await model_service.async_init()
+
         file_path = await model_service.get_model_path(filename)
         
         if not file_path or not file_path.exists():
@@ -85,6 +91,8 @@ async def delete_model(filename: str):
     """
     try:
         model_service = ModelService()
+        await model_service.async_init()
+
         deleted = await model_service.delete_model(filename)
         
         if not deleted:
@@ -111,16 +119,18 @@ async def get_model_metrics(filename: str):
     """
     try:
         model_service = ModelService()
+        await model_service.async_init()
+
         metrics = await model_service.get_model_metrics(filename)
         
         if not metrics:
             raise HTTPException(status_code=404, detail="Model metrics not found")
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": "Model metrics retrieved",
             "metrics": metrics
-        }
+        })
         
     except HTTPException:
         raise
@@ -138,16 +148,18 @@ async def get_model_plots(filename: str):
     """
     try:
         model_service = ModelService()
+        await model_service.async_init()
+
         plots = await model_service.get_model_plots(filename)
         
         if not plots:
             raise HTTPException(status_code=404, detail="Model plots not found")
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": "Model plots retrieved",
             "plots": plots
-        }
+        })
         
     except HTTPException:
         raise
@@ -156,8 +168,8 @@ async def get_model_plots(filename: str):
         raise HTTPException(status_code=500, detail=f"Failed to get plots: {str(e)}")
 
 
-@router.post("/compare/{user_id}")
-async def compare_user_models(user_id: str, model_filenames: List[str] = None):
+@router.post("/compare", response_model=None)
+async def compare_user_models(request: CompareModelsRequest):
     """
     Compare multiple models for a user.
     
@@ -166,16 +178,18 @@ async def compare_user_models(user_id: str, model_filenames: List[str] = None):
     """
     try:
         model_service = ModelService()
-        comparison = await model_service.compare_models(user_id, model_filenames)
+        await model_service.async_init()
+
+        comparison = await model_service.compare_models(request)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": "Model comparison completed",
             "comparison": comparison
-        }
+        })
         
     except Exception as e:
-        logger.error(f"Failed to compare models for user {user_id}: {e}")
+        logger.error(f"Failed to compare models for user {request.user_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to compare models: {str(e)}")
 
 
@@ -188,14 +202,16 @@ async def validate_model(filename: str):
     """
     try:
         model_service = ModelService()
+        await model_service.async_init()
+        
         is_valid = await model_service.validate_model(filename)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": "Model validation completed",
             "is_valid": is_valid,
             "filename": filename
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to validate model {filename}: {e}")

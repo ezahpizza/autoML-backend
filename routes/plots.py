@@ -5,6 +5,7 @@ Plot management API routes.
 import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.encoders import jsonable_encoder
 
 from services.plot_service import PlotService
 from schemas.response_schemas import PlotListResponse, PlotListItem, BaseResponse
@@ -23,6 +24,7 @@ async def list_user_plots(user_id: str, limit: int = 50):
     """
     try:
         plot_service = PlotService()
+        await plot_service.async_init()
         plots = await plot_service.list_user_plots(user_id, limit)
         
         # Convert to response format
@@ -36,12 +38,12 @@ async def list_user_plots(user_id: str, limit: int = 50):
                 view_url=plot["view_url"]
             ))
         
-        return PlotListResponse(
+        return jsonable_encoder(PlotListResponse(
             success=True,
             message=f"Found {len(plots)} plots",
             plots=plot_items,
             total_count=len(plots)
-        )
+        ))
         
     except Exception as e:
         logger.error(f"Failed to list plots for user {user_id}: {e}")
@@ -100,6 +102,7 @@ async def delete_plot(filename: str):
         logger.error(f"Failed to delete plot {filename}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to delete plot: {str(e)}")
 
+
 @router.get("/by-model/{model_filename}")
 async def get_plots_by_model(model_filename: str):
     """
@@ -118,12 +121,12 @@ async def get_plots_by_model(model_filename: str):
             if info:
                 plot_details.append(info)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Found {len(plot_details)} plots for model {model_filename}",
             "plots": plot_details,
             "total_count": len(plot_details)
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to get plots for model {model_filename}: {e}")
@@ -142,12 +145,12 @@ async def get_plots_by_type(user_id: str, plot_type: str):
         plot_service = PlotService()
         plots = await plot_service.get_plots_by_type(user_id, plot_type)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Found {len(plots)} plots of type '{plot_type}'",
             "plots": plots,
             "total_count": len(plots)
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to get plots by type {plot_type} for user {user_id}: {e}")
@@ -165,12 +168,12 @@ async def delete_user_plots(user_id: str):
         plot_service = PlotService()
         result = await plot_service.delete_user_plots(user_id)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Deleted {result['deleted']} plots for user {user_id}",
             "deleted": result["deleted"],
             "failed": result["failed"]
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to delete plots for user {user_id}: {e}")
@@ -189,16 +192,17 @@ async def cleanup_orphaned_plots():
         plot_service = PlotService()
         result = await plot_service.cleanup_orphaned_plots()
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Cleaned up {result['deleted']} orphaned plots",
             "deleted": result["deleted"],
             "failed": result["failed"]
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to cleanup orphaned plots: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to cleanup: {str(e)}")
+
 
 @router.get("/health")
 async def plots_health_check():
@@ -215,12 +219,12 @@ async def plots_health_check():
         # Count total plots
         total_plots = len(list(plots_dir.glob("*.png"))) if plots_accessible else 0
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": "Plot service is healthy",
             "plots_directory_accessible": plots_accessible,
             "total_plots": total_plots
-        }
+        })
         
     except Exception as e:
         logger.error(f"Plot service health check failed: {e}")

@@ -5,6 +5,7 @@ EDA report generation API routes.
 import logging
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.encoders import jsonable_encoder
 
 from services.eda_service import EDAService
 from schemas.request_schemas import EDAGenerateRequest
@@ -42,13 +43,14 @@ async def generate_eda_report(
         
         # Initialize EDA service
         eda_service = EDAService()
+        await eda_service.async_init()
         
         # Generate EDA report
         result = await eda_service.generate_report(file, eda_request)
         
         logger.info(f"EDA report generated for user {user_id}")
         
-        return EDAResponse(
+        return jsonable_encoder(EDAResponse(
             success=True,
             message="EDA report generated successfully",
             filename=result["filename"],
@@ -57,7 +59,7 @@ async def generate_eda_report(
             dataset_rows=result["dataset_rows"],
             dataset_columns=result["dataset_columns"],
             file_size=result["file_size"]
-        )
+        ))
         
     except HTTPException:
         raise
@@ -75,6 +77,8 @@ async def view_eda_report(filename: str):
     """
     try:
         eda_service = EDAService()
+        await eda_service.async_init()
+
         file_path = await eda_service.get_report_path(filename)
         
         if not file_path or not file_path.exists():
@@ -102,6 +106,8 @@ async def download_eda_report(filename: str):
     """
     try:
         eda_service = EDAService()
+        await eda_service.async_init()
+
         file_path = await eda_service.get_report_path(filename)
         
         if not file_path or not file_path.exists():
@@ -130,14 +136,16 @@ async def list_user_eda_reports(user_id: str, limit: int = 50):
     """
     try:
         eda_service = EDAService()
+        await eda_service.async_init()
+        
         reports = await eda_service.list_user_reports(user_id, limit)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Found {len(reports)} EDA reports",
             "reports": reports,
             "total_count": len(reports)
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to list EDA reports for user {user_id}: {e}")
@@ -154,14 +162,16 @@ async def get_eda_history(user_id: str, limit: int = 50):
     """
     try:
         eda_service = EDAService()
+        await eda_service.async_init()
+
         history = await eda_service.get_eda_history(user_id, limit)
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"Retrieved {len(history)} EDA records",
             "history": history,
             "total_count": len(history)
-        }
+        })
         
     except Exception as e:
         logger.error(f"Failed to get EDA history for user {user_id}: {e}")
@@ -177,15 +187,17 @@ async def delete_eda_report(filename: str):
     """
     try:
         eda_service = EDAService()
+        await eda_service.async_init()
+        
         deleted = await eda_service.delete_report(filename)
         
         if not deleted:
             raise HTTPException(status_code=404, detail="EDA report not found")
         
-        return {
+        return jsonable_encoder({
             "success": True,
             "message": f"EDA report {filename} deleted successfully"
-        }
+        })
         
     except HTTPException:
         raise

@@ -1,0 +1,22 @@
+# Ignore metadata and config
+.dockerignore
+.git
+.gitignore
+future-updates.txt
+.env
+
+# Ignore Python-related artifacts
+*.pyc
+__pycache__/
+.pytest_cache/
+*.log
+
+# Ignore dev environments
+.venv/
+envirax/
+
+# Ignore non-production code/data
+tests/
+notebooks/
+*.ipynb
+storage/

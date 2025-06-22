@@ -4,7 +4,7 @@ Cleanup service for managing file and database cleanup operations.
 
 import logging
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from config import settings
@@ -72,10 +72,7 @@ class CleanupService:
                 files_deleted=files_deleted,
                 records_deleted=records_deleted
             )
-            
-            # Clean up empty directories
-            FileManager.cleanup_empty_directories(settings.storage_dir)
-            
+                        
             total_files = len(files_deleted)
             total_records = sum(records_deleted.values())
             
@@ -127,7 +124,7 @@ class CleanupService:
             if not dry_run:
                 db = MongoDB()
                 await db.connect()
-                cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
+                cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
 
                 eda_collection = db.get_collection("eda_jobs")
                 model_collection = db.get_collection("model_jobs")
@@ -145,7 +142,6 @@ class CleanupService:
                     files_deleted=files_deleted,
                     records_deleted=records_deleted
                 )
-                FileManager.cleanup_empty_directories(settings.storage_dir)
             
             total_files = len(files_deleted)
             total_records = sum(records_deleted.values()) if not dry_run else 0
@@ -387,7 +383,7 @@ class CleanupService:
                 user_id=user_id,
                 files_deleted=files_deleted or [],
                 records_deleted=records_deleted or {},
-                created_at=datetime.now(UTC)
+                created_at=datetime.now(timezone.utc)
             )
             
             await logs_collection.insert_one(log_entry.model_dump(by_alias=True))

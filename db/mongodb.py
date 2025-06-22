@@ -4,7 +4,7 @@ MongoDB connection and database operations for AutoML platform.
 
 import asyncio
 from typing import Optional, Dict, Any, List
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
@@ -76,8 +76,8 @@ class MongoDB:
     # User Operations
     async def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new user record."""
-        user_data["created_at"] = datetime.now(UTC)
-        user_data["updated_at"] = datetime.now(UTC)
+        user_data["created_at"] = datetime.now(timezone.utc)
+        user_data["updated_at"] = datetime.now(timezone.utc)
         
         collection = self.get_collection("users")
         result = await collection.insert_one(user_data)
@@ -96,7 +96,7 @@ class MongoDB:
     
     async def update_user(self, user_id: str, update_data: Dict[str, Any]) -> bool:
         """Update user data."""
-        update_data["updated_at"] = datetime.now(UTC)
+        update_data["updated_at"] = datetime.now(timezone.utc)
         
         collection = self.get_collection("users")
         result = await collection.update_one(
@@ -109,7 +109,7 @@ class MongoDB:
     # EDA Jobs Operations
     async def create_eda_job(self, job_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new EDA job record."""
-        job_data["created_at"] = datetime.now(UTC)
+        job_data["created_at"] = datetime.now(timezone.utc)
         
         collection = self.get_collection("eda_jobs")
         result = await collection.insert_one(job_data)
@@ -138,7 +138,7 @@ class MongoDB:
     # Model Jobs Operations
     async def create_model_job(self, job_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new model job record."""
-        job_data["created_at"] = datetime.now(UTC)
+        job_data["created_at"] = datetime.now(timezone.utc)
         
         collection = self.get_collection("model_jobs")
         result = await collection.insert_one(job_data)
@@ -177,7 +177,7 @@ class MongoDB:
     # Predictions Operations
     async def create_prediction(self, prediction_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new prediction record."""
-        prediction_data["created_at"] = datetime.now(UTC)
+        prediction_data["created_at"] = datetime.now(timezone.utc)
         
         collection = self.get_collection("predictions")
         result = await collection.insert_one(prediction_data)
@@ -218,7 +218,7 @@ class MongoDB:
     
     async def delete_old_records(self, hours: int = 24) -> Dict[str, int]:
         """Delete records older than specified hours."""
-        cutoff_time = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        cutoff_time = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         cutoff_time = cutoff_time.replace(hour=cutoff_time.hour - hours)
         
         deleted_counts = {}

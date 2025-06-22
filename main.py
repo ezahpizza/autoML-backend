@@ -4,19 +4,17 @@ FastAPI entrypoint for AutoML platform.
 
 import logging
 from contextlib import asynccontextmanager
-import uvicorn
 
 from typing import Dict, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
 
 from config import settings
 from db.mongodb import mongodb
 from routes import train, eda, plots, models, cleanup
 from services.cleanup_service import CleanupService
-from schemas.response_schemas import HealthResponse, ErrorResponse, UserResponse
+from schemas.response_schemas import HealthResponse, UserResponse
 from schemas.request_schemas import UserInitRequest
 
 # Configure logging
@@ -180,30 +178,3 @@ async def initialize_user(request: Dict[str, Any]):
     except Exception as e:
         logger.error(f"Failed to initialize user: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to initialize user: {str(e)}")
-
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc: HTTPException):
-    """Custom HTTP exception handler."""
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=ErrorResponse(
-            error="HTTPException",
-            message=exc.detail,
-            details={"status_code": exc.status_code}
-        ).dict()
-    )
-
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request, exc: Exception):
-    """General exception handler."""
-    logger.error(f"Unhandled exception: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content=ErrorResponse(
-            error="InternalServerError",
-            message="An unexpected error occurred",
-            details={"type": type(exc).__name__}
-        ).dict()
-    )

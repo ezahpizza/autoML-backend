@@ -18,10 +18,12 @@ logger = logging.getLogger(__name__)
 class PlotService:
     """Service for managing model evaluation plots."""
     
-    async def __init__(self):
+    def __init__(self):
         self.db = MongoDB()
-        await self.db.connect()
         self.plots_dir = settings.plots_dir
+
+    async def async_init(self):
+        await self.db.connect()
     
     async def get_plot_path(self, filename: str) -> Optional[Path]:
         """Get full path to plot file."""

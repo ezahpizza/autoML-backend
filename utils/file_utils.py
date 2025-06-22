@@ -7,7 +7,7 @@ import aiofiles
 import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import pandas as pd
 from fastapi import UploadFile, HTTPException
@@ -160,7 +160,7 @@ class FileManager:
         if not directory.exists():
             return []
         
-        cutoff_time = datetime.now() - timedelta(hours=hours)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
         old_files = []
         
         try:
@@ -228,27 +228,6 @@ class FileManager:
         
         return total_size
     
-    @staticmethod
-    def cleanup_empty_directories(base_directory: Path) -> int:
-        """Remove empty directories and return count."""
-        removed_count = 0
-        
-        try:
-            # Walk through directories bottom-up
-            for directory in sorted(base_directory.rglob('*'), key=lambda p: len(p.parts), reverse=True):
-                if directory.is_dir() and directory != base_directory:
-                    try:
-                        # Try to remove if empty
-                        directory.rmdir()
-                        removed_count += 1
-                        logger.info(f"Removed empty directory: {directory}")
-                    except OSError:
-                        # Directory not empty, skip
-                        pass
-        except Exception as e:
-            logger.error(f"Error cleaning up empty directories: {e}")
-        
-        return removed_count
     
     @staticmethod
     async def create_backup(source_path: Path, backup_dir: Path) -> Optional[Path]:
@@ -258,7 +237,7 @@ class FileManager:
                 return None
             
             backup_dir.mkdir(parents=True, exist_ok=True)
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             backup_filename = f"{source_path.stem}_{timestamp}{source_path.suffix}"
             backup_path = backup_dir / backup_filename
             
