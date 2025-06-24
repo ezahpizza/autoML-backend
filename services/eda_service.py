@@ -5,7 +5,6 @@ EDA service for generating and managing EDA reports using Pandas Profiling.
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone
 from pandas_profiling import ProfileReport
 from fastapi import UploadFile, HTTPException
 

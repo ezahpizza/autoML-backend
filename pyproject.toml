@@ -183,6 +183,7 @@ dependencies = [
     "widgetsnbextension==4.0.14",
     "wordcloud==1.9.4",
     "wtforms==3.2.1",
+    "xgboost>=3.0.2",
     "xxhash==3.5.0",
     "ydata-profiling==4.14.0",
     "yellowbrick==1.5",
