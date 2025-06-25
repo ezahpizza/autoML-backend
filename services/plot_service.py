@@ -43,7 +43,7 @@ class PlotService:
         """List all plots for a specific user."""
         try:
             # Find model jobs for this user to get associated plots
-            model_jobs = await self.db.find_documents(
+            model_jobs = await self.db.find(
                 "model_jobs",
                 {"user_id": user_id},
                 limit=limit,
@@ -158,7 +158,7 @@ class PlotService:
         """Find all plots associated with a specific model."""
         try:
             # Query model jobs to find plots for this model
-            model_job = await self.db.find_document(
+            model_job = await self.db.find(
                 "model_jobs",
                 {"filename": model_filename}
             )
@@ -191,7 +191,7 @@ class PlotService:
             
             # Get all referenced plot files from database
             referenced_plots = set()
-            model_jobs = await self.db.find_documents("model_jobs", {})
+            model_jobs = await self.db.find("model_jobs", {})
             
             for job in model_jobs:
                 model_job = ModelJob(**job)
@@ -239,7 +239,7 @@ class PlotService:
         """Remove plot filename from model jobs that reference it."""
         try:
             # Find model jobs that reference this plot
-            model_jobs = await self.db.find_documents(
+            model_jobs = await self.db.find(
                 "model_jobs",
                 {"plot_filenames": {"$in": [plot_filename]}}
             )
