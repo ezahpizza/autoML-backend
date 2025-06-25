@@ -106,19 +106,6 @@ class PredictionRequest(BaseModel):
         return v
 
 
-class FileUploadRequest(BaseModel):
-    """Base request schema for file uploads."""
-    
-    user_id: str = Field(..., description="User identifier")
-    
-    @field_validator('user_id')
-    @classmethod
-    def validate_user_id(cls, v):
-        if not v or len(v.strip()) == 0:
-            raise ValueError('user_id cannot be empty')
-        return v.strip()
-
-
 class CleanupUserRequest(BaseModel):
     """Request schema for user cleanup operations."""
     
@@ -138,6 +125,7 @@ class CleanupUserRequest(BaseModel):
         if not v:
             raise ValueError('Confirmation required for cleanup operation')
         return v
+    
     
 class CompareModelsRequest(BaseModel):
     """Request schema for user model comparison operations."""

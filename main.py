@@ -5,7 +5,7 @@ FastAPI entrypoint for AutoML platform.
 import logging
 from contextlib import asynccontextmanager
 
-from typing import Dict, Any
+from typing import Dict
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,8 +14,7 @@ from config import settings
 from db.mongodb import mongodb
 from routes import train, eda, plots, models, cleanup
 from services.cleanup_service import CleanupService
-from schemas.response_schemas import HealthResponse, UserResponse
-from schemas.request_schemas import UserInitRequest
+from schemas.response_schemas import HealthResponse
 
 # Configure logging
 logging.basicConfig(
@@ -134,47 +133,3 @@ async def health_check():
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         raise HTTPException(status_code=500, detail="Health check failed")
-
-
-@app.post("/user/init")
-async def initialize_user(request: Dict[str, Any]):
-    """Initialize a new user in the system."""
-    try:
-        
-        
-        # Validate request
-        user_request = UserInitRequest(**request)
-        
-        # Check if user already exists
-        existing_user = await mongodb.get_user(user_request.user_id)
-        if existing_user:
-            return UserResponse(
-                success=True,
-                message="User already exists",
-                user_id=existing_user["user_id"],
-                email=existing_user["email"],
-                name=existing_user.get("name"),
-                created_at=existing_user["created_at"]
-            )
-        
-        # Create new user
-        user_data = {
-            "user_id": user_request.user_id,
-            "email": user_request.email,
-            "name": user_request.name
-        }
-        
-        created_user = await mongodb.create_user(user_data)
-        
-        return UserResponse(
-            success=True,
-            message="User initialized successfully",
-            user_id=created_user["user_id"],
-            email=created_user["email"],
-            name=created_user.get("name"),
-            created_at=created_user["created_at"]
-        )
-        
-    except Exception as e:
-        logger.error(f"Failed to initialize user: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to initialize user: {str(e)}")

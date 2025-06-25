@@ -239,6 +239,33 @@ class MongoDB:
         deleted_counts["predictions"] = pred_result.deleted_count
         
         return deleted_counts
+    
+    async def find(self, collection_name: str, filter: dict, limit: int = None, sort: list = None, one: bool = False):
+        """Find one or many documents in a collection."""
+        collection = self.get_collection(collection_name)
+        if one:
+            doc = await collection.find_one(filter)
+            if doc and "_id" in doc:
+                doc["_id"] = str(doc["_id"])
+            return doc
+        else:
+            cursor = collection.find(filter)
+            if sort:
+                cursor = cursor.sort(sort)
+            if limit:
+                cursor = cursor.limit(limit)
+            results = []
+            async for doc in cursor:
+                if "_id" in doc:
+                    doc["_id"] = str(doc["_id"])
+                results.append(doc)
+            return results
+
+    async def update_document(self, collection_name: str, filter: dict, update: dict):
+        """Update a document in a collection."""
+        collection = self.get_collection(collection_name)
+        result = await collection.update_one(filter, update)
+        return result.modified_count > 0
 
 
 # Global MongoDB instance

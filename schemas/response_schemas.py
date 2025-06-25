@@ -15,15 +15,6 @@ class BaseResponse(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Response timestamp")
 
 
-class UserResponse(BaseResponse):
-    """Response schema for user operations."""
-    
-    user_id: str = Field(..., description="User identifier")
-    email: str = Field(..., description="User email")
-    name: Optional[str] = Field(None, description="User display name")
-    created_at: datetime = Field(..., description="User creation timestamp")
-
-
 class EDAResponse(BaseResponse):
     """Response schema for EDA report generation."""
     
@@ -59,13 +50,6 @@ class PredictionResponse(BaseResponse):
     input_features: Dict[str, Any] = Field(..., description="Input features used")
 
 
-class FileListResponse(BaseResponse):
-    """Response schema for file listing."""
-    
-    files: List[Dict[str, Any]] = Field(..., description="List of files")
-    total_count: int = Field(..., description="Total number of files")
-
-
 class ModelListItem(BaseModel):
     """Model list item schema."""
     
@@ -83,24 +67,6 @@ class ModelListResponse(BaseResponse):
     
     models: List[ModelListItem] = Field(..., description="List of user models")
     total_count: int = Field(..., description="Total number of models")
-
-
-class EDAListItem(BaseModel):
-    """EDA report list item schema."""
-    
-    filename: str = Field(..., description="Report filename")
-    dataset_name: str = Field(..., description="Original dataset name")
-    dataset_rows: int = Field(..., description="Number of rows")
-    dataset_columns: int = Field(..., description="Number of columns")
-    created_at: datetime = Field(..., description="Creation timestamp")
-    view_url: str = Field(..., description="View URL")
-
-
-class EDAListResponse(BaseResponse):
-    """Response schema for EDA report listing."""
-    
-    reports: List[EDAListItem] = Field(..., description="List of EDA reports")
-    total_count: int = Field(..., description="Total number of reports")
 
 
 class PlotListItem(BaseModel):
@@ -137,13 +103,3 @@ class HealthResponse(BaseModel):
     database_connected: bool = Field(..., description="Database connection status")
     storage_accessible: bool = Field(..., description="Storage accessibility status")
     version: str = Field(..., description="API version")
-
-
-class ErrorResponse(BaseModel):
-    """Response schema for error responses."""
-    
-    success: bool = Field(default=False, description="Operation success status")
-    error: str = Field(..., description="Error type")
-    message: str = Field(..., description="Error message")
-    details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Error timestamp")
