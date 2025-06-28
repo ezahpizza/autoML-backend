@@ -5,29 +5,6 @@ Pydantic request schemas for API endpoints.
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 
-
-class UserInitRequest(BaseModel):
-    """Request schema for user initialization."""
-    
-    user_id: str = Field(..., description="Unique user identifier from frontend auth")
-    email: str = Field(..., description="User email address")
-    name: Optional[str] = Field(None, description="User display name")
-    
-    @field_validator('user_id')
-    @classmethod
-    def validate_user_id(cls, v):
-        if not v or len(v.strip()) == 0:
-            raise ValueError('user_id cannot be empty')
-        return v.strip()
-    
-    @field_validator('email')
-    @classmethod
-    def validate_email(cls, v):
-        if not v or '@' not in v:
-            raise ValueError('Invalid email address')
-        return v.lower().strip()
-
-
 class EDAGenerateRequest(BaseModel):
     """Request schema for EDA report generation."""
     

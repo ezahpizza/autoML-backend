@@ -73,39 +73,6 @@ class MongoDB:
             raise RuntimeError("Database not connected")
         return self.database[collection_name]
     
-    # User Operations
-    async def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new user record."""
-        user_data["created_at"] = datetime.now(timezone.utc)
-        user_data["updated_at"] = datetime.now(timezone.utc)
-        
-        collection = self.get_collection("users")
-        result = await collection.insert_one(user_data)
-        
-        return {"_id": str(result.inserted_id), **user_data}
-    
-    async def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get user by user_id."""
-        collection = self.get_collection("users")
-        user = await collection.find_one({"user_id": user_id})
-        
-        if user:
-            user["_id"] = str(user["_id"])
-        
-        return user
-    
-    async def update_user(self, user_id: str, update_data: Dict[str, Any]) -> bool:
-        """Update user data."""
-        update_data["updated_at"] = datetime.now(timezone.utc)
-        
-        collection = self.get_collection("users")
-        result = await collection.update_one(
-            {"user_id": user_id},
-            {"$set": update_data}
-        )
-        
-        return result.modified_count > 0
-    
     # EDA Jobs Operations
     async def create_eda_job(self, job_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new EDA job record."""

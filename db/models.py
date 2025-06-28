@@ -80,6 +80,7 @@ class ModelJob(BaseModel):
     best_model_score: float = Field(..., description="Best model performance score")
     metrics: Dict[str, Any] = Field(default_factory=dict, description="Model evaluation metrics")
     plot_filenames: List[str] = Field(default_factory=list, description="Generated plot filenames")
+    feature_names: List[str] = Field(None, description="Feature names used in training")
     dataset_rows: int = Field(..., description="Number of rows in dataset")
     dataset_columns: int = Field(..., description="Number of columns in dataset")
     training_time: Optional[float] = Field(None, description="Training time in seconds")

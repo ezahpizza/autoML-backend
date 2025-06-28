@@ -58,6 +58,7 @@ class TrainService:
             
             # Clean dataset
             df_clean = self._preprocess_dataset(df, request.target_column)
+            df_features = df_clean.drop(request.target_column, axis='columns')
             
             # Setup PyCaret environment
             if problem_type == "classification":
@@ -134,6 +135,7 @@ class TrainService:
                 best_model_score=metrics.get('best_score', 0.0),
                 metrics=metrics,
                 plot_filenames=[url.split('/')[-1] for url in plot_urls],
+                feature_names=(df_features.columns),
                 dataset_rows=len(df_clean),
                 dataset_columns=len(df_clean.columns),
                 training_time=training_time
@@ -215,108 +217,6 @@ class TrainService:
             
         except Exception as e:
             logger.error(f"Prediction failed: {e}")
-            raise e
-    
-    async def get_training_history(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
-        """Get training history for a user."""
-        try:
-            model_jobs_collection = self.db.get_collection("model_jobs")
-            cursor = model_jobs_collection.find(
-                {"user_id": user_id}
-            ).sort("created_at", -1).limit(limit)
-            
-            history = []
-            async for doc in cursor:
-                history.append({
-                    "filename": doc["filename"],
-                    "dataset_name": doc["dataset_name"],
-                    "target_column": doc["target_column"],
-                    "best_model": doc["best_model"],
-                    "best_model_score": doc["best_model_score"],
-                    "model_type": doc["model_type"],
-                    "dataset_rows": doc["dataset_rows"],
-                    "dataset_columns": doc["dataset_columns"],
-                    "training_time": doc.get("training_time"),
-                    "created_at": doc["created_at"],
-                    "status": doc.get("status", "completed")
-                })
-            
-            return history
-            
-        except Exception as e:
-            logger.error(f"Failed to get training history: {e}")
-            raise e
-    
-    async def validate_dataset(self, file: UploadFile, target_column: str) -> Dict[str, Any]:
-        """Validate dataset for training without actually training."""
-        try:
-            # Save uploaded file temporarily
-            temp_filename = f"validation_{int(time.time())}.csv"
-            temp_filepath = settings.storage_dir / "temp" / temp_filename
-            temp_filepath.parent.mkdir(parents=True, exist_ok=True)
-            
-            await FileManager.save_uploaded_file(file, temp_filepath)
-            
-            # Read dataset
-            df = await FileManager.read_csv_file(temp_filepath)
-            
-            # Convert dtypes to string for JSON serialization
-            data_types_str = {col: str(dtype) for col, dtype in df.dtypes.to_dict().items()}
-            validation_result = {
-                "valid": True,
-                "warnings": [],
-                "errors": [],
-                "dataset_info": {
-                    "rows": len(df),
-                    "columns": len(df.columns),
-                    "target_column": target_column,
-                    "column_names": df.columns.tolist(),
-                    "data_types": data_types_str,
-                    "missing_values": df.isnull().sum().to_dict(),
-                    "target_column_type": str(df[target_column].dtype) if target_column in df.columns else None
-                }
-            }
-            
-            # Check target column exists
-            if target_column not in df.columns:
-                validation_result["valid"] = False
-                validation_result["errors"].append(f"Target column '{target_column}' not found")
-            
-            # Check for missing values in target
-            if target_column in df.columns and df[target_column].isnull().sum() > 0:
-                validation_result["warnings"].append(f"Target column has {df[target_column].isnull().sum()} missing values")
-            
-            # Check dataset size limits
-            if len(df) > settings.MAX_DATASET_ROWS:
-                validation_result["warnings"].append(f"Dataset has {len(df)} rows, maximum is {settings.MAX_DATASET_ROWS}")
-            
-            if len(df.columns) > settings.MAX_DATASET_COLUMNS:
-                validation_result["warnings"].append(f"Dataset has {len(df.columns)} columns, maximum is {settings.MAX_DATASET_COLUMNS}")
-            
-            # Determine problem type
-            if target_column in df.columns:
-                problem_type = self._determine_problem_type(df, target_column)
-                validation_result["dataset_info"]["problem_type"] = problem_type
-                
-                # Check for sufficient samples per class (classification)
-                if problem_type == "classification":
-                    class_counts = df[target_column].value_counts()
-                    min_samples = class_counts.min()
-                    if min_samples < 2:
-                        validation_result["errors"].append("Some classes have less than 2 samples")
-                    
-                    validation_result["dataset_info"]["class_distribution"] = class_counts.to_dict()
-            
-            # Clean up temporary file
-            if temp_filepath.exists():
-                temp_filepath.unlink()
-            
-            return validation_result
-            
-        except Exception as e:
-            # Clean up temporary file on error
-            if 'temp_filepath' in locals() and temp_filepath.exists():
-                temp_filepath.unlink()
             raise e
     
     def _determine_problem_type(self, df: pd.DataFrame, target_column: str) -> str:

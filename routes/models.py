@@ -192,27 +192,3 @@ async def compare_user_models(request: CompareModelsRequest):
         logger.error(f"Failed to compare models for user {request.user_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to compare models: {str(e)}")
 
-
-@router.get("/validate/{filename}")
-async def validate_model(filename: str):
-    """
-    Validate that a model file is accessible and loadable.
-    
-    - **filename**: Model filename to validate
-    """
-    try:
-        model_service = ModelService()
-        await model_service.async_init()
-        
-        is_valid = await model_service.validate_model(filename)
-        
-        return jsonable_encoder({
-            "success": True,
-            "message": "Model validation completed",
-            "is_valid": is_valid,
-            "filename": filename
-        })
-        
-    except Exception as e:
-        logger.error(f"Failed to validate model {filename}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to validate model: {str(e)}")

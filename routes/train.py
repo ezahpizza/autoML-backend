@@ -85,31 +85,6 @@ async def train_model(
         raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
 
-@router.get("/history/{user_id}")
-async def get_model_history(user_id: str, limit: int = 50):
-    """
-    Get model training history for a user.
-    
-    - **user_id**: User identifier
-    - **limit**: Maximum number of records to return (default: 50)
-    """
-    try:
-        train_service = TrainService()
-        await train_service.async_init()
-        history = await train_service.get_training_history(user_id, limit)
-        
-        return jsonable_encoder({
-            "success": True,
-            "message": f"Retrieved {len(history)} training records",
-            "history": history,
-            "total_count": len(history)
-        })
-        
-    except Exception as e:
-        logger.error(f"Failed to get training history for user {user_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get history: {str(e)}")
-
-
 @router.post("/predict")
 async def make_prediction(request: Dict[str, Any]):
     """
@@ -146,41 +121,5 @@ async def make_prediction(request: Dict[str, Any]):
         logger.error(f"Prediction failed: {e}")
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
-
-@router.post("/validate-dataset")
-async def validate_dataset(
-    file: UploadFile = File(..., description="CSV dataset file"),
-    target_column: str = Form(..., description="Target column name")
-):
-    """
-    Validate dataset for training without actually training.
-    
-    - **file**: CSV file to validate
-    - **target_column**: Target column name to check
-    """
-    try:
-        # Validate file format
-        is_valid, error_msg = await FileManager.validate_csv_file(file)
-        if not is_valid:
-            raise HTTPException(status_code=400, detail=error_msg)
-        
-        # Initialize training service
-        train_service = TrainService()
-        await train_service.async_init()
-        
-        # Validate dataset
-        validation_result = await train_service.validate_dataset(file, target_column)
-        
-        return jsonable_encoder({
-            "success": True,
-            "message": "Dataset validation completed",
-            "validation_result": validation_result
-        })
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Dataset validation failed: {e}")
-        raise HTTPException(status_code=400, detail=f"Validation failed: {str(e)}")
 
 

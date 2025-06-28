@@ -2,7 +2,6 @@
 Model management service for AutoML platform.
 """
 
-import pickle
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -131,6 +130,7 @@ class ModelService:
                 "best_model": model_doc.get("best_model"),
                 "best_model_score": model_doc.get("best_model_score"),
                 "metrics": model_doc.get("metrics", {}),
+                "feature_names": model_doc.get("feature_names", []),
                 "dataset_rows": model_doc.get("dataset_rows"),
                 "dataset_columns": model_doc.get("dataset_columns"),
                 "training_time": model_doc.get("training_time"),
@@ -241,34 +241,3 @@ class ModelService:
             logger.error(f"Failed to compare models for user {user_id}: {e}")
             raise
     
-    async def validate_model(self, filename: str) -> bool:
-        """Validate that a model file is accessible and loadable."""
-        try:
-            model_path = settings.models_dir / filename
-            
-            # Check if file exists
-            if not model_path.exists():
-                logger.warning(f"Model file does not exist: {filename}")
-                return False
-            
-            # Try to load the pickle file
-            try:
-                with open(model_path, 'rb') as f:
-                    model = pickle.load(f)
-                
-                # Basic validation - check if it's a PyCaret model
-                if hasattr(model, 'predict'):
-                    logger.info(f"Model validation successful: {filename}")
-                    return True
-                else:
-                    logger.warning(f"Model file is not a valid ML model: {filename}")
-                    return False
-                    
-            except (pickle.PickleError, EOFError, AttributeError) as e:
-                logger.warning(f"Failed to load model file {filename}: {e}")
-                return False
-            
-        except Exception as e:
-            logger.error(f"Failed to validate model {filename}: {e}")
-            return False
-
