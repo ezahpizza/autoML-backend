@@ -1,6 +1,6 @@
 # ensoML Backend
 
-**ensoML** (“Enso” is a Zen symbol for completeness and harmony) is a beginner-friendly, no-code AutoML platform. It empowers users to upload tabular datasets, generate rich EDA reports, and train optimized machine learning models—all without writing code. The backend is built with FastAPI, PyCaret, YData Profiling, and MongoDB, and is designed for robust, multi-user, production deployment.
+**ensoML** (“Enso” is a Zen symbol for completeness and harmony) is a beginner-friendly, no-code AutoML platform. It empowers users to upload tabular datasets, generate rich EDA reports, and train optimized machine learning models—all without writing a single line of code. The backend is built with FastAPI, PyCaret, YData Profiling, and MongoDB, and is designed for robust, multi-user, production deployment.
 
 ## Features
 
