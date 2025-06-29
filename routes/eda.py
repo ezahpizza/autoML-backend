@@ -43,7 +43,7 @@ async def generate_eda_report(
         
         # Initialize EDA service
         eda_service = EDAService()
-        await eda_service.async_init()
+        
         
         # Generate EDA report
         result = await eda_service.generate_report(file, eda_request)
@@ -77,7 +77,7 @@ async def view_eda_report(filename: str):
     """
     try:
         eda_service = EDAService()
-        await eda_service.async_init()
+        
 
         file_path = await eda_service.get_report_path(filename)
         
@@ -106,7 +106,7 @@ async def download_eda_report(filename: str):
     """
     try:
         eda_service = EDAService()
-        await eda_service.async_init()
+        
 
         file_path = await eda_service.get_report_path(filename)
         
@@ -136,7 +136,7 @@ async def list_user_eda_reports(user_id: str, limit: int = 50):
     """
     try:
         eda_service = EDAService()
-        await eda_service.async_init()
+        
         
         reports = await eda_service.list_user_reports(user_id, limit)
         
@@ -162,7 +162,7 @@ async def get_eda_history(user_id: str, limit: int = 50):
     """
     try:
         eda_service = EDAService()
-        await eda_service.async_init()
+        
 
         history = await eda_service.get_eda_history(user_id, limit)
         
@@ -187,7 +187,7 @@ async def delete_eda_report(filename: str):
     """
     try:
         eda_service = EDAService()
-        await eda_service.async_init()
+        
         
         deleted = await eda_service.delete_report(filename)
         
