@@ -55,7 +55,6 @@ async def train_model(
         
         # Initialize training service
         train_service = TrainService()
-        await train_service.async_init()
         
         # Start training process
         result = await train_service.train_model(file, train_request)
@@ -100,8 +99,7 @@ async def make_prediction(request: Dict[str, Any]):
         prediction_request = PredictionRequest(**request)
         
         # Initialize training service
-        train_service = TrainService()
-        await train_service.async_init()
+        train_service = TrainService()        
         
         # Make prediction
         result = await train_service.predict(prediction_request)

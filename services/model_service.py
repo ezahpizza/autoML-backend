@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from config import settings
-from db.mongodb import MongoDB
+from db.mongodb import mongodb
 from utils.naming import NamingUtils
 from utils.file_utils import FileManager
 from schemas.request_schemas import CompareModelsRequest
@@ -19,10 +19,7 @@ class ModelService:
     """Service for managing trained models and their metadata."""
     
     def __init__(self):
-        self.db = MongoDB()
-    
-    async def async_init(self):
-        await self.db.connect()
+        self.db = mongodb
 
     async def list_user_models(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
         """List all models for a specific user."""

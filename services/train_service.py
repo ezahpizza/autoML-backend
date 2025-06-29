@@ -14,7 +14,7 @@ import pycaret.classification as pc_clf
 import pycaret.regression as pc_reg
 
 from config import settings
-from db.mongodb import MongoDB
+from db.mongodb import mongodb
 from db.models import ModelJob, Prediction
 from schemas.request_schemas import ModelTrainRequest, PredictionRequest
 from utils.file_utils import FileManager
@@ -27,12 +27,8 @@ logger = logging.getLogger(__name__)
 class TrainService:
     """Service for handling model training operations with PyCaret."""
     def __init__(self):
-        self.db = MongoDB()
+        self.db = mongodb
         self.plot_service = PlotService()
-    
-    async def async_init(self):
-        await self.db.connect()
-        await self.plot_service.async_init()
     
     async def train_model(self, file: UploadFile, request: ModelTrainRequest) -> Dict[str, Any]:
         """Train ML model using PyCaret and save results."""

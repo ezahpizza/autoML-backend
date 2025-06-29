@@ -9,7 +9,7 @@ from pandas_profiling import ProfileReport
 from fastapi import UploadFile, HTTPException
 
 from config import settings
-from db.mongodb import MongoDB
+from db.mongodb import mongodb
 from db.models import EDAJob
 from schemas.request_schemas import EDAGenerateRequest
 from utils.file_utils import FileManager
@@ -22,17 +22,10 @@ class EDAService:
     """Service for EDA report generation and management."""
     
     def __init__(self):
-        """Initialize EDA service."""
-        self.db = MongoDB()
-        self.eda_collection = None  # Will be set after DB connect
-        self.reports_dir = settings.eda_reports_dir
-        
-        # Ensure EDA reports directory exists
-        self.reports_dir.mkdir(parents=True, exist_ok=True)
-    
-    async def async_init(self):
-        await self.db.connect()
+        self.db = mongodb
         self.eda_collection = self.db.get_collection("eda_jobs")
+        self.reports_dir = settings.eda_reports_dir
+        self.reports_dir.mkdir(parents=True, exist_ok=True)
     
     async def generate_report(self, file: UploadFile, request: EDAGenerateRequest) -> Dict[str, Any]:
         """Generate EDA report from uploaded CSV file."""

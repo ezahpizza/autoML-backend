@@ -23,8 +23,7 @@ async def list_user_plots(user_id: str, limit: int = 50):
     - **limit**: Maximum number of plots to return (default: 50)
     """
     try:
-        plot_service = PlotService()
-        await plot_service.async_init()
+        plot_service = PlotService()       
         plots = await plot_service.list_user_plots(user_id, limit)
         
         # Convert to response format

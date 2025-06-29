@@ -25,7 +25,6 @@ async def list_user_models(user_id: str, limit: int = 50):
     """
     try:
         model_service = ModelService()
-        await model_service.async_init()
 
         models = await model_service.list_user_models(user_id, limit)
         
@@ -61,8 +60,7 @@ async def download_model(filename: str):
     - **filename**: Model filename to download
     """
     try:
-        model_service = ModelService()
-        await model_service.async_init()
+        model_service = ModelService()      
 
         file_path = await model_service.get_model_path(filename)
         
@@ -91,7 +89,6 @@ async def delete_model(filename: str):
     """
     try:
         model_service = ModelService()
-        await model_service.async_init()
 
         deleted = await model_service.delete_model(filename)
         
@@ -119,7 +116,6 @@ async def get_model_metrics(filename: str):
     """
     try:
         model_service = ModelService()
-        await model_service.async_init()
 
         metrics = await model_service.get_model_metrics(filename)
         
@@ -148,7 +144,6 @@ async def get_model_plots(filename: str):
     """
     try:
         model_service = ModelService()
-        await model_service.async_init()
 
         plots = await model_service.get_model_plots(filename)
         
@@ -178,7 +173,6 @@ async def compare_user_models(request: CompareModelsRequest):
     """
     try:
         model_service = ModelService()
-        await model_service.async_init()
 
         comparison = await model_service.compare_models(request)
         

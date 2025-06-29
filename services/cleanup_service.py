@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from config import settings
-from db.mongodb import MongoDB
+from db.mongodb import mongodb
 from utils.file_utils import FileManager
 from schemas.request_schemas import CleanupUserRequest
 from db.models import CleanupLog
@@ -20,8 +20,7 @@ class CleanupService:
     """Service for handling cleanup operations on files and database records."""
     
     def __init__(self):
-        """Get database connection."""
-        self.db = MongoDB()
+        self.db = mongodb
     
     async def cleanup_user_data(self, request: CleanupUserRequest) -> Dict[str, Any]:
         """
@@ -52,7 +51,7 @@ class CleanupService:
                         files_deleted.append(str(file_path))
                         logger.info(f"Deleted user file: {file_path}")
 
-            db = MongoDB()
+            db = mongodb
             await db.connect()
             eda_collection = db.get_collection("eda_jobs")
             model_collection = db.get_collection("model_jobs")
@@ -122,7 +121,7 @@ class CleanupService:
                         files_deleted.append(str(file_path))
             
             if not dry_run:
-                db = MongoDB()
+                db = mongodb
                 await db.connect()
                 cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
 
@@ -169,7 +168,7 @@ class CleanupService:
         """
         try:
             records_deleted = {}
-            db = MongoDB()
+            db = mongodb
             await db.connect()
             eda_collection = db.get_collection("eda_jobs")
             model_collection = db.get_collection("model_jobs")
@@ -264,7 +263,7 @@ class CleanupService:
             stats["total_size_mb"] = round(total_size / (1024 * 1024), 2)
             
             # Database statistics
-            db = MongoDB()
+            db = mongodb
             await db.connect()
             
             db_stats = {}
@@ -302,7 +301,7 @@ class CleanupService:
             List of cleanup log entries
         """
         try:
-            db = MongoDB()
+            db = mongodb
             await db.connect()
             logs_collection = db.get_collection("cleanup_logs")
             cursor = logs_collection.find({}).sort("created_at", -1).limit(limit)
@@ -375,7 +374,7 @@ class CleanupService:
             records_deleted: Count of deleted records per collection
         """
         try:
-            db = MongoDB()
+            db = mongodb
             await db.connect()
             logs_collection = db.get_collection("cleanup_logs")
             log_entry = CleanupLog(

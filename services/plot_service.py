@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from db.mongodb import MongoDB
+from db.mongodb import mongodb
 from db.models import ModelJob
 from utils.file_utils import FileManager
 from utils.naming import NamingUtils
@@ -19,12 +19,9 @@ class PlotService:
     """Service for managing model evaluation plots."""
     
     def __init__(self):
-        self.db = MongoDB()
+        self.db = mongodb
         self.plots_dir = settings.plots_dir
 
-    async def async_init(self):
-        await self.db.connect()
-    
     async def get_plot_path(self, filename: str) -> Optional[Path]:
         """Get full path to plot file."""
         try:
