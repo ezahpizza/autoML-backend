@@ -126,40 +126,6 @@
 
 ---
 
-### Dataset Validation
-
-- `POST /model/validate-dataset`  
-  Validate a dataset and target column before training.  
-  **Form Data:**  
-  - `file`: CSV file  
-  - `target_column`: string  
-  **Response:**  
-  - Dataset info, warnings, errors
-
----
-
-### Plots
-
-- `GET /plots/list/{user_id}`  
-  List all plots for a user.
-
-- `GET /plots/{filename}`  
-  View/download a plot image.
-
-- `GET /plots/by-model/{model_filename}`  
-  Get all plots for a specific model.
-
-- `GET /plots/by-type/{user_id}/{plot_type}`  
-  Get all plots of a specific type for a user.
-
-- `DELETE /plots/delete/{filename}`  
-  Delete a specific plot.
-
-- `DELETE /plots/delete-user/{user_id}`  
-  Delete all plots for a user.
-
----
-
 ### Cleanup & Maintenance
 
 - `POST /cleanup/user/{user_id}`  
