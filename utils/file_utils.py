@@ -166,8 +166,7 @@ class FileManager:
         try:
             for filepath in directory.rglob('*'):
                 if filepath.is_file():
-                    # Check file modification time
-                    file_time = datetime.fromtimestamp(filepath.stat().st_mtime)
+                    file_time = datetime.fromtimestamp(filepath.stat().st_mtime, tz=timezone.utc)
                     if file_time < cutoff_time:
                         old_files.append(filepath)
         except Exception as e:

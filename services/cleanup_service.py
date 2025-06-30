@@ -52,7 +52,7 @@ class CleanupService:
                         logger.info(f"Deleted user file: {file_path}")
 
             db = mongodb
-            await db.connect()
+            
             eda_collection = db.get_collection("eda_jobs")
             model_collection = db.get_collection("model_jobs")
             pred_collection = db.get_collection("predictions")
@@ -122,7 +122,7 @@ class CleanupService:
             
             if not dry_run:
                 db = mongodb
-                await db.connect()
+                
                 cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
 
                 eda_collection = db.get_collection("eda_jobs")
@@ -169,7 +169,7 @@ class CleanupService:
         try:
             records_deleted = {}
             db = mongodb
-            await db.connect()
+            
             eda_collection = db.get_collection("eda_jobs")
             model_collection = db.get_collection("model_jobs")
             eda_jobs = await eda_collection.find({}).to_list(None)
@@ -264,7 +264,6 @@ class CleanupService:
             
             # Database statistics
             db = mongodb
-            await db.connect()
             
             db_stats = {}
             collections = ["eda_jobs", "model_jobs", "predictions", "cleanup_logs"]
@@ -302,7 +301,6 @@ class CleanupService:
         """
         try:
             db = mongodb
-            await db.connect()
             logs_collection = db.get_collection("cleanup_logs")
             cursor = logs_collection.find({}).sort("created_at", -1).limit(limit)
             logs = await cursor.to_list(None)
@@ -375,7 +373,7 @@ class CleanupService:
         """
         try:
             db = mongodb
-            await db.connect()
+            
             logs_collection = db.get_collection("cleanup_logs")
             log_entry = CleanupLog(
                 operation_type=operation_type,
