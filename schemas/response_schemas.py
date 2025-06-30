@@ -67,24 +67,7 @@ class ModelListResponse(BaseResponse):
     
     models: List[ModelListItem] = Field(..., description="List of user models")
     total_count: int = Field(..., description="Total number of models")
-
-
-class PlotListItem(BaseModel):
-    """Plot list item schema."""
     
-    filename: str = Field(..., description="Plot filename")
-    plot_type: str = Field(..., description="Type of plot")
-    model_name: str = Field(..., description="Associated model name")
-    created_at: datetime = Field(..., description="Creation timestamp")
-    view_url: str = Field(..., description="View URL")
-
-
-class PlotListResponse(BaseResponse):
-    """Response schema for plot listing."""
-    
-    plots: List[PlotListItem] = Field(..., description="List of plots")
-    total_count: int = Field(..., description="Total number of plots")
-
 
 class CleanupResponse(BaseResponse):
     """Response schema for cleanup operations."""

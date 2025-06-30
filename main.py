@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from config import settings
 from db.mongodb import mongodb
-from routes import train, eda, plots, models, cleanup
+from routes import train, eda, models, cleanup
 from services.cleanup_service import CleanupService
 from schemas.response_schemas import HealthResponse
 
@@ -89,7 +89,6 @@ app.mount("/static/eda", StaticFiles(directory=str(settings.eda_reports_dir)), n
 # Include route modules
 app.include_router(train.router, prefix="/model", tags=["Model Training"])
 app.include_router(eda.router, prefix="/eda", tags=["EDA Reports"])
-app.include_router(plots.router, prefix="/plots", tags=["Plots"])
 app.include_router(models.router, prefix="/model", tags=["Model Management"])
 app.include_router(cleanup.router, prefix="/cleanup", tags=["Cleanup"])
 
