@@ -15,21 +15,20 @@ RUN adduser \
     --shell "/sbin/nologin" \
     --no-create-home \
     --uid "${UID}" \
-    appuser
-
-RUN chown -R appuser:appuser /app
+    appuser && \
+    chown -R appuser:appuser /app
 
 COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked
 
-COPY . .
+RUN uv venv
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    MPLCONFIGDIR="/app/.cache/matplotlib"
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
-ENV PATH="/app/.venv/bin:$PATH" \
-    MPLCONFIGDIR="/app/.cache/matplotlib"
+COPY . .
 
 RUN mkdir -p /app/.cache/matplotlib && chown -R appuser:appuser /app/.cache
 
