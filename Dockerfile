@@ -21,7 +21,7 @@ RUN chown -R appuser:appuser /app
 
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-install-project --no-dev
+    uv sync --locked
 
 COPY . .
 
