@@ -62,11 +62,8 @@ class Settings(BaseSettings):
     API_TITLE: str = Field("AutoML Platform API")
     API_VERSION: str = Field("1.0.0")
     API_DESCRIPTION: str = Field("Backend for AutoML platform with PyCaret and EDA")
-    CORS_ORIGINS: List[str] = Field(
-        default=[
-            "http://localhost:8080",
-            "http://localhost:5173",
-        ],
+    CORS_ORIGINS: str = Field(
+        default="http://localhost:8080",
         env="CORS_ORIGINS"
     )
     
